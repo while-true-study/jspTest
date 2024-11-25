@@ -1,0 +1,87 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, javax.servlet.http.Cookie" %>
+
+<%
+    String roomId = request.getParameter("roomId");
+    String itemName = request.getParameter("itemName");
+    int itemCost = Integer.parseInt(request.getParameter("itemCost"));
+    int purchaseId = -1;
+
+    if (roomId != null && itemName != null && !itemName.isEmpty()) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            String url = "jdbc:mariadb://127.0.0.1:3306/userdb?useUnicode=true&characterEncoding=UTF-8";
+            String dbUser = "root";
+            String dbPassword = "1234";
+            conn = DriverManager.getConnection(url, dbUser, dbPassword);
+
+            // 구매 물품을 purchases 테이블에 추가
+            String sql = "INSERT INTO purchases (purchase_name, cost, room_id) VALUES (?, ?, ?)";
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setString(1, itemName);
+            pstmt.setInt(2, itemCost);
+            pstmt.setInt(3, Integer.parseInt(roomId));
+            pstmt.executeUpdate();
+
+            // 생성된 purchaseId 가져오기
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                purchaseId = rs.getInt(1);  // 생성된 purchase_id 가져오기
+            }
+
+            // 방의 사용자 수 구하기
+            String userCountSql = "SELECT COUNT(*) FROM users WHERE room_id = ?";
+            pstmt = conn.prepareStatement(userCountSql);
+            pstmt.setInt(1, Integer.parseInt(roomId));
+            rs = pstmt.executeQuery();
+            rs.next();
+            int userCount = rs.getInt(1);
+
+            if (userCount == 0) {
+                out.println("<p>이 방에 사용자가 없습니다. 비용 분배를 할 수 없습니다.</p>");
+            } else {
+                // 각 사용자에게 분배할 금액 계산
+                int amountPerUser = itemCost / userCount;
+
+                // 방의 사용자들에게 구매 비용 나누기
+                String contributionSql = "INSERT INTO user_contributions (purchase_id, user_id, amount) VALUES (?, ?, ?)";
+                pstmt = conn.prepareStatement(contributionSql);
+
+                // 방에 속한 사용자들에 대해 분배
+                String usersSql = "SELECT user_id FROM users WHERE room_id = ?";
+                pstmt = conn.prepareStatement(usersSql);
+                pstmt.setInt(1, Integer.parseInt(roomId));
+                rs = pstmt.executeQuery();
+
+                while (rs.next()) {
+                    int userId = rs.getInt("user_id");
+                    pstmt.setInt(1, purchaseId);
+                    pstmt.setInt(2, userId);
+                    pstmt.setInt(3, amountPerUser);
+                    pstmt.executeUpdate();
+                }
+
+                out.println("<h2>구매 물품이 성공적으로 추가되었습니다!</h2>");
+                out.println("<p>구매 물품: " + itemName + "</p>");
+                out.println("<p>구매 비용: " + itemCost + "원</p>");
+                out.println("<p>방의 모든 사용자에게 균등하게 나누어졌습니다.</p>");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.println("<p>오류 발생: " + e.getMessage() + "</p>");
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    } else {
+        out.println("<p>구매 물품 정보를 입력해 주세요.</p>");
+    }
+%>
+

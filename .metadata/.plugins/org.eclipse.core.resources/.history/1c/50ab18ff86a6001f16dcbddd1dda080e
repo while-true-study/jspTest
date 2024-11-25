@@ -1,0 +1,27 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*" %>
+<%@ page import="javax.servlet.http.Cookie" %>
+
+<%
+    String roomId = request.getParameter("roomId");
+    String userName = null;
+
+    // 쿠키에서 사용자 이름 가져오기
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("userName")) {
+                userName = java.net.URLDecoder.decode(cookie.getValue(), "UTF-8");
+                break;
+            }
+        }
+    }
+
+    if (userName != null && roomId != null) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            String url = "jdbc:mariadb://127.0.0.1:3306/your_database_name";
+            String

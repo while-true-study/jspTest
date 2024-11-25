@@ -1,0 +1,77 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, javax.servlet.http.Cookie" %>
+
+<%
+    // 방 ID, 물품 이름, 비용 파라미터 가져오기
+    String roomId = request.getParameter("roomId");
+    String itemName = request.getParameter("itemName");
+    int itemCost = Integer.parseInt(request.getParameter("itemCost"));
+
+    if (roomId != null && itemName != null && itemCost > 0) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            String url = "jdbc:mariadb://127.0.0.1:3306/userdb?useUnicode=true&characterEncoding=UTF-8";
+            String dbUser = "root";
+            String dbPassword = "1234";
+            conn = DriverManager.getConnection(url, dbUser, dbPassword);
+
+            // 구매 물품을 purchases 테이블에 저장
+            String purchaseSql = "INSERT INTO purchases (room_id, item_name, item_cost) VALUES (?, ?, ?)";
+            pstmt = conn.prepareStatement(purchaseSql);
+            pstmt.setInt(1, Integer.parseInt(roomId));
+            pstmt.setString(2, itemName);
+            pstmt.setInt(3, itemCost);
+            int result = pstmt.executeUpdate();
+
+            if (result > 0) {
+                // 구매 물품이 추가된 후, 방의 인원 수를 구하여 비용을 나눔
+                String userCountSql = "SELECT COUNT(*) AS user_count FROM rooms WHERE room_id = ?";
+                pstmt = conn.prepareStatement(userCountSql);
+                pstmt.setInt(1, Integer.parseInt(roomId));
+                rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    int userCount = rs.getInt("user_count");
+                    int amountPerUser = itemCost / userCount;  // 각 사용자당 부담할 비용
+
+                    // 모든 사용자에게 비용 할당
+                    String usersSql = "SELECT id FROM users WHERE room_id = ?";
+                    pstmt = conn.prepareStatement(usersSql);
+                    pstmt.setInt(1, Integer.parseInt(roomId));
+                    rs = pstmt.executeQuery();
+
+                    while (rs.next()) {
+                        int userId = rs.getInt("id");
+
+                        String contributionSql = "INSERT INTO user_contributions (purchase_id, user_id, amount) VALUES (?, ?, ?)";
+                        pstmt = conn.prepareStatement(contributionSql);
+                        pstmt.setInt(1, purchase_id);  // 추가된 purchase_id 사용
+                        pstmt.setInt(2, userId);
+                        pstmt.setInt(3, amountPerUser);
+                        pstmt.executeUpdate();
+                    }
+                }
+
+                out.println("<p>구매 물품이 성공적으로 추가되었습니다!</p>");
+            } else {
+                out.println("<p>구매 물품 추가에 실패했습니다.</p>");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.println("<p>오류 발생: " + e.getMessage() + "</p>");
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    } else {
+        out.println("<p>잘못된 입력입니다.</p>");
+    }
+%>

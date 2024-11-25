@@ -1,0 +1,48 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.Connection, java.sql.DriverManager, java.sql.PreparedStatement, java.sql.SQLException" %>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+</head>
+<body>
+    <h1>회원가입</h1>
+    <form action="register.jsp" method="post">
+        이름: <input type="text" name="name" required><br>
+        이메일: <input type="email" name="email" required><br>
+        비밀번호: <input type="password" name="password" required><br>
+        <button type="submit">회원가입</button>
+    </form>
+
+    <%
+        if (request.getMethod().equalsIgnoreCase("POST")) {
+            String name = request.getParameter("name");
+            String email = request.getParameter("email");
+            String password = request.getParameter("password");
+
+            String connString = "jdbc:mariadb://127.0.0.1:3306/userdb?useUnicode=true&characterEncoding=UTF-8";
+            String dbUser = "root";
+            String dbPassword = "1234";
+
+            try {
+                Class.forName("org.mariadb.jdbc.Driver");
+                Connection conn = DriverManager.getConnection(connString, dbUser, dbPassword);
+
+                String sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, name);
+                pstmt.setString(2, email);
+                pstmt.setString(3, password);
+                pstmt.executeUpdate();
+
+                out.println("<p>회원가입 성공!</p>");
+            } catch (SQLException | ClassNotFoundException e) {
+                e.printStackTrace();
+                out.println("<p>회원가입 실패: " + e.getMessage() + "</p>");
+            }
+        }
+    %>
+</body>
+</html>

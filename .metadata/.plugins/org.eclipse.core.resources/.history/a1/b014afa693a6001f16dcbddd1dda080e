@@ -1,0 +1,85 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, javax.servlet.http.Cookie" %>
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방 입장</title>
+</head>
+<body>
+
+<%
+    String userId = null;
+    String roomId = request.getParameter("roomId");
+
+    // 쿠키에서 사용자 ID 가져오기
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("userId")) {
+                userId = cookie.getValue();
+            }
+        }
+    }
+
+    // 사용자 ID와 방 ID가 존재할 때만 처리
+    if (userId != null && roomId != null) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            String url = "jdbc:mariadb://127.0.0.1:3306/userdb?useUnicode=true&characterEncoding=UTF-8";
+            String dbUser = "root";
+            String dbPassword = "1234";
+            conn = DriverManager.getConnection(url, dbUser, dbPassword);
+
+            // 사용자가 이미 방에 입장한 상태인지 확인
+            String checkUserRoomSql = "SELECT room_id FROM users WHERE id = ?";
+            pstmt = conn.prepareStatement(checkUserRoomSql);
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+
+            String userRoomId = null;
+            if (rs.next()) {
+                userRoomId = rs.getString("room_id");
+            }
+
+            // 사용자가 이미 다른 방에 입장 중인지 확인
+            if (userRoomId == null) {
+                // 사용자가 방에 입장할 수 있도록 처리
+                String insertSql = "INSERT INTO users (id, room_id) VALUES (?, ?)";
+                pstmt = conn.prepareStatement(insertSql);
+                pstmt.setString(1, userId);
+                pstmt.setString(2, roomId);
+                pstmt.executeUpdate();
+
+                // 방 입장 성공 메시지 출력
+                out.println("<h2>방에 입장했습니다!</h2>");
+                out.println("<p>" + roomId + "번 방에 입장하셨습니다.</p>");
+                out.println("<a href='mainPage.jsp'>메인 페이지로 돌아가기</a>");
+            } else {
+                // 이미 다른 방에 입장 중이라면 오류 메시지 출력
+                out.println("<h2>이미 다른 방에 입장 중입니다. 로그아웃 후 다른 방에 입장할 수 있습니다.</h2>");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.println("<p>오류 발생: " + e.getMessage() + "</p>");
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    } else {
+        out.println("<p>사용자 정보가 없습니다. 다시 로그인해주세요.</p>");
+    }
+%>
+
+</body>
+</html>

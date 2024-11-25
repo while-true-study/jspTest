@@ -1,0 +1,101 @@
+/* 기본 설정 */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fc;
+    color: #000;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    
+    flex-direction: column;
+}
+
+body ul {
+  list-style-type: none;
+  padding:0;
+}
+
+
+/* 컨테이너 스타일 */
+.container {
+    text-align: center;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 700px;
+    max-height: 90%;
+    box-sizing: border-box;
+}
+
+.buttons{
+	display:flex;
+	flex-direction: column;
+}
+
+.buttons form{
+	display:flex;
+	margin: 0 auto;
+	
+}
+
+table {
+	margin: 0 auto;
+}
+
+/* 제목 스타일 */
+h1 {
+    margin-bottom: 20px;
+}
+
+/* 방 목록, 방 생성 폼 */
+.form-container, .room-list {
+    margin-top: 30px;
+    overflow: auto;
+    width: 100%;
+}
+
+.inputbox {
+	margin-right:20px;
+}
+
+.leave-room-button {
+	width: 150px;
+}
+
+.room-item {
+    background-color: #f4f4f4;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* 버튼 스타일 */
+button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button a:visited {
+  color : white;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* 로그인/회원가입 등의 링크 스타일 */
+a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
